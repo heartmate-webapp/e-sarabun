@@ -1,0 +1,1072 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#102b46">
+  <meta name="description" content="ระบบทะเบียนรับ–ส่งหนังสืออิเล็กทรอนิกส์">
+  <title>ระบบทะเบียนรับ–ส่งหนังสือ</title>
+
+  <!-- Font: prefer locally installed TH Sarabun PSK; Sarabun is a web fallback. -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.15.3/dist/sweetalert2.min.css">
+
+  <style>
+    /* =====================================================================
+       01. DESIGN TOKENS AND BASE STYLES
+       ===================================================================== */
+    @font-face {
+      font-family: "TH Sarabun PSK";
+      src: local("TH Sarabun PSK"), local("TH SarabunPSK"), local("TH Sarabun New");
+      font-display: swap;
+    }
+    :root {
+      --font: "TH Sarabun PSK", "TH SarabunPSK", "TH Sarabun New", "Sarabun", sans-serif;
+      --navy-950: #0a1d30;
+      --navy-900: #102b46;
+      --navy-800: #183b5d;
+      --navy-700: #245178;
+      --blue-600: #2d6ea5;
+      --teal-600: #167d78;
+      --teal-500: #23968e;
+      --ink: #172b3d;
+      --muted: #6d7c8b;
+      --line: #e2e9ef;
+      --surface: #ffffff;
+      --surface-soft: #f4f7fa;
+      --surface-blue: #eef4f8;
+      --success: #14835b;
+      --warning: #b7791f;
+      --danger: #b83a45;
+      --shadow: 0 18px 50px rgba(15, 39, 62, .10);
+      --radius: 16px;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--surface-soft);
+      color: var(--ink);
+      font-family: var(--font);
+      font-size: 19px;
+      line-height: 1.35;
+      -webkit-font-smoothing: antialiased;
+    }
+    button, input, select, textarea { font: inherit; }
+    button { cursor: pointer; }
+    a { color: inherit; text-decoration: none; }
+    .hidden { display: none !important; }
+    .muted { color: var(--muted); }
+    .small { font-size: 15px; }
+    .eyebrow { color: var(--teal-600); font-size: 14px; font-weight: 700; letter-spacing: .08em; }
+    .icon { width: 1.2em; text-align: center; }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 9px;
+      min-height: 42px; padding: 8px 16px; border: 1px solid transparent;
+      border-radius: 10px; font-weight: 700; transition: .18s ease;
+    }
+    .btn:disabled { opacity: .55; cursor: not-allowed; }
+    .btn-primary { background: var(--navy-800); color: #fff; }
+    .btn-primary:hover { background: var(--navy-900); transform: translateY(-1px); }
+    .btn-teal { background: var(--teal-600); color: #fff; }
+    .btn-teal:hover { background: #116c68; }
+    .btn-light { background: #fff; color: var(--navy-800); border-color: var(--line); }
+    .btn-light:hover { background: var(--surface-blue); }
+    .btn-danger { background: #fff2f2; color: var(--danger); border-color: #f1d5d7; }
+    .btn-icon { width: 38px; min-width: 38px; padding: 0; }
+    .field { display: grid; gap: 6px; margin-bottom: 14px; }
+    .field label { color: #334c61; font-weight: 700; font-size: 17px; }
+    .control {
+      width: 100%; min-height: 44px; border: 1px solid #d7e0e8; border-radius: 10px;
+      padding: 9px 12px; color: var(--ink); background: #fff; outline: none;
+      transition: border .15s, box-shadow .15s;
+    }
+    .control:focus { border-color: var(--teal-500); box-shadow: 0 0 0 3px rgba(35,150,142,.12); }
+    textarea.control { min-height: 88px; resize: vertical; }
+    .input-wrap { position: relative; }
+    .input-wrap .control { padding-right: 44px; }
+    .input-action { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); border: 0; background: transparent; color: var(--muted); padding: 6px; }
+    .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: 0 4px 16px rgba(19,47,70,.035); }
+    .card-pad { padding: 20px; }
+
+    /* =====================================================================
+       02. LOGIN EXPERIENCE
+       ===================================================================== */
+    #loginScreen { min-height: 100vh; display: grid; grid-template-columns: minmax(360px, 1.05fr) minmax(400px, .95fr); background: #fff; }
+    .login-visual {
+      position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between;
+      padding: clamp(30px, 5vw, 72px); color: #fff;
+      background: radial-gradient(circle at 15% 15%, rgba(43,139,151,.38), transparent 34%),
+                  linear-gradient(145deg, #0b2035 0%, #153b5c 57%, #1b5c69 100%);
+    }
+    .login-visual:before, .login-visual:after { content: ""; position: absolute; border: 1px solid rgba(255,255,255,.12); border-radius: 50%; pointer-events: none; }
+    .login-visual:before { width: 570px; height: 570px; right: -230px; bottom: -240px; }
+    .login-visual:after { width: 400px; height: 400px; right: -145px; bottom: -155px; }
+    .brand-lockup { position: relative; z-index: 1; display: flex; align-items: center; gap: 14px; }
+    .brand-mark { display: grid; place-items: center; width: 54px; height: 54px; border-radius: 15px; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.22); font-size: 25px; }
+    .brand-title { font-size: 23px; font-weight: 700; line-height: 1.05; }
+    .brand-subtitle { font-size: 13px; opacity: .72; letter-spacing: .13em; margin-top: 3px; }
+    .visual-copy { position: relative; z-index: 1; max-width: 620px; margin: 70px 0; }
+    .visual-copy h1 { font-size: clamp(35px, 4vw, 58px); line-height: 1.08; margin: 0 0 18px; font-weight: 700; }
+    .visual-copy p { max-width: 520px; color: rgba(255,255,255,.78); font-size: 20px; margin: 0; }
+    .visual-features { position: relative; z-index: 1; display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; max-width: 620px; }
+    .visual-feature { padding: 14px; border: 1px solid rgba(255,255,255,.14); border-radius: 12px; background: rgba(255,255,255,.055); }
+    .visual-feature i { font-size: 18px; color: #8bd2ca; }
+    .visual-feature strong { display: block; margin-top: 7px; font-size: 16px; }
+    .visual-feature span { color: rgba(255,255,255,.65); font-size: 13px; }
+    .login-panel { display: grid; place-items: center; padding: 34px; }
+    .login-box { width: min(100%, 450px); }
+    .login-box h2 { font-size: 31px; margin: 0 0 5px; color: var(--navy-900); }
+    .login-box .intro { margin: 0 0 26px; color: var(--muted); font-size: 17px; }
+    .agency-preview { display: flex; align-items: center; gap: 13px; padding: 14px; margin: 18px 0; border: 1px solid var(--line); border-radius: 13px; background: var(--surface-soft); }
+    .agency-logo { width: 54px; height: 54px; flex: 0 0 54px; border-radius: 12px; display: grid; place-items: center; overflow: hidden; background: #e5eef4; color: var(--navy-700); font-size: 22px; }
+    .agency-logo img { width: 100%; height: 100%; object-fit: contain; background: #fff; }
+    .agency-name { font-weight: 700; font-size: 18px; }
+    .agency-code { color: var(--muted); font-size: 14px; }
+    .login-submit { width: 100%; min-height: 48px; margin-top: 5px; font-size: 20px; }
+    .login-foot { color: #8a98a5; font-size: 13px; text-align: center; margin-top: 24px; }
+    .remember-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 4px 0 15px; font-size: 15px; }
+    .check-line { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
+    .check-line input { accent-color: var(--teal-600); width: 16px; height: 16px; }
+    .text-button { border: 0; padding: 0; color: var(--teal-600); background: transparent; font-weight: 700; }
+
+    /* =====================================================================
+       03. APPLICATION SHELL
+       ===================================================================== */
+    #appScreen { min-height: 100vh; display: grid; grid-template-columns: 260px minmax(0,1fr); }
+    .sidebar { background: var(--navy-950); color: #dce7ef; display: flex; flex-direction: column; min-height: 100vh; position: sticky; top: 0; height: 100vh; }
+    .side-brand { padding: 22px 18px; display: flex; align-items: center; gap: 11px; border-bottom: 1px solid rgba(255,255,255,.09); }
+    .side-brand .brand-mark { width: 42px; height: 42px; font-size: 19px; border-radius: 12px; }
+    .side-brand .brand-title { font-size: 18px; }
+    .side-brand .brand-subtitle { font-size: 10px; }
+    .side-agency { padding: 15px 18px; border-bottom: 1px solid rgba(255,255,255,.08); }
+    .side-agency strong { display: block; font-size: 17px; color: #fff; }
+    .side-agency span { font-size: 13px; color: #9eb2c3; }
+    .side-nav { padding: 13px 10px; overflow-y: auto; flex: 1; }
+    .nav-label { color: #7792a8; font-size: 12px; font-weight: 700; letter-spacing: .12em; padding: 13px 12px 7px; }
+    .nav-link { width: 100%; border: 0; display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 9px; background: transparent; color: #b9cbd8; text-align: left; font-size: 17px; margin: 2px 0; transition: .15s; }
+    .nav-link i { width: 19px; text-align: center; color: #8fa9bc; }
+    .nav-link:hover { background: rgba(255,255,255,.075); color: #fff; }
+    .nav-link.active { color: #fff; background: linear-gradient(90deg, rgba(35,150,142,.29), rgba(35,150,142,.09)); box-shadow: inset 3px 0 var(--teal-500); }
+    .nav-link.active i { color: #65d0c4; }
+    .side-footer { padding: 14px 16px; border-top: 1px solid rgba(255,255,255,.08); }
+    .side-user { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .avatar { display: grid; place-items: center; flex: 0 0 38px; width: 38px; height: 38px; border-radius: 50%; background: #2d607e; color: #fff; font-weight: 700; overflow: hidden; }
+    .avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .side-user-text { min-width: 0; flex: 1; }
+    .side-user-text strong { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #fff; font-size: 16px; }
+    .side-user-text span { display: block; color: #8fa9bc; font-size: 12px; }
+    .main-column { min-width: 0; }
+    .topbar { height: 72px; padding: 0 28px; background: rgba(255,255,255,.94); border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; gap: 18px; position: sticky; top: 0; z-index: 10; backdrop-filter: blur(12px); }
+    .top-left { display: flex; align-items: center; gap: 13px; min-width: 0; }
+    .mobile-menu { display: none; }
+    .page-title { font-size: 23px; font-weight: 700; color: var(--navy-900); white-space: nowrap; }
+    .top-actions { display: flex; align-items: center; gap: 9px; }
+    .icon-button { position: relative; width: 39px; height: 39px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 10px; background: #fff; color: var(--navy-800); }
+    .icon-button:hover { background: var(--surface-blue); }
+    .notification-dot { position: absolute; top: 6px; right: 6px; width: 7px; height: 7px; border-radius: 50%; background: #e45b61; border: 1px solid #fff; }
+    .content { padding: 26px 28px 42px; max-width: 1600px; margin: 0 auto; }
+    .page-heading { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
+    .page-heading h1 { margin: 0; color: var(--navy-900); font-size: 29px; }
+    .page-heading p { margin: 2px 0 0; color: var(--muted); font-size: 16px; }
+    .heading-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+    .stat-grid { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 14px; margin-bottom: 18px; }
+    .stat-card { padding: 17px 18px; min-height: 112px; display: flex; align-items: center; gap: 14px; }
+    .stat-icon { width: 46px; height: 46px; border-radius: 13px; display: grid; place-items: center; background: #edf4f8; color: var(--blue-600); font-size: 19px; }
+    .stat-card:nth-child(2) .stat-icon { background: #e8f5f1; color: var(--success); }
+    .stat-card:nth-child(3) .stat-icon { background: #fff4e4; color: var(--warning); }
+    .stat-card:nth-child(4) .stat-icon { background: #fbecee; color: var(--danger); }
+    .stat-card strong { display: block; font-size: 30px; color: var(--navy-900); line-height: 1; }
+    .stat-card span { color: var(--muted); font-size: 15px; }
+    .panel-grid { display: grid; grid-template-columns: minmax(0,1.4fr) minmax(280px,.8fr); gap: 16px; }
+    .panel-title { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 17px 19px; border-bottom: 1px solid var(--line); }
+    .panel-title h3 { margin: 0; color: var(--navy-900); font-size: 20px; }
+    .panel-body { padding: 18px; }
+    .chart-wrap { height: 285px; }
+    .toolbar { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; margin-bottom: 15px; }
+    .toolbar .control { width: auto; min-width: 135px; min-height: 40px; }
+    .toolbar .search-control { min-width: 220px; flex: 1; }
+    .table-wrap { width: 100%; overflow: auto; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+    table.data-table { width: 100%; border-collapse: collapse; min-width: 740px; font-size: 16px; }
+    .data-table th { background: #f0f5f8; color: #38546a; font-size: 15px; font-weight: 700; white-space: nowrap; padding: 11px 12px; text-align: left; border-bottom: 1px solid var(--line); }
+    .data-table td { padding: 11px 12px; border-bottom: 1px solid #edf1f4; vertical-align: middle; }
+    .data-table tr:last-child td { border-bottom: 0; }
+    .data-table tbody tr:hover { background: #f8fbfc; }
+    .table-primary { color: var(--navy-800); font-weight: 700; }
+    .table-sub { display: block; color: var(--muted); font-size: 13px; }
+    .actions-cell { display: flex; gap: 5px; white-space: nowrap; }
+    .mini-btn { width: 31px; height: 31px; display: inline-grid; place-items: center; border: 1px solid var(--line); border-radius: 8px; color: var(--navy-700); background: #fff; }
+    .mini-btn:hover { background: var(--surface-blue); }
+    .mini-btn.danger { color: var(--danger); }
+    .status { display: inline-flex; align-items: center; padding: 4px 9px; border-radius: 999px; font-size: 13px; font-weight: 700; white-space: nowrap; background: #edf2f6; color: #526678; }
+    .status.done, .status.completed, .status.active { background: #e5f5ed; color: #13734f; }
+    .status.pending, .status.received, .status.in_progress { background: #fff3df; color: #9a651b; }
+    .status.cancelled, .status.inactive { background: #fbe9ea; color: #aa3942; }
+    .empty-state { padding: 42px 15px; text-align: center; color: var(--muted); }
+    .empty-state i { font-size: 31px; color: #a9b8c4; display: block; margin-bottom: 10px; }
+    .empty-state strong { display: block; color: var(--navy-800); font-size: 18px; }
+    .list-stack { display: grid; gap: 10px; }
+    .list-item { display: flex; align-items: flex-start; gap: 11px; padding: 11px 0; border-bottom: 1px solid #edf1f4; }
+    .list-item:last-child { border-bottom: 0; }
+    .list-symbol { width: 34px; height: 34px; flex: 0 0 34px; display: grid; place-items: center; border-radius: 10px; background: var(--surface-blue); color: var(--blue-600); }
+    .list-item strong { display: block; color: var(--navy-800); }
+    .list-item p { margin: 1px 0 0; color: var(--muted); font-size: 14px; }
+    .mobile-overlay { display: none; }
+
+    /* =====================================================================
+       04. MODALS, PDF SURFACE AND RESPONSIVE RULES
+       ===================================================================== */
+    .swal2-popup { font-family: var(--font) !important; font-size: 18px !important; border-radius: 18px !important; }
+    .swal2-title { color: var(--navy-900) !important; font-size: 25px !important; }
+    .swal2-html-container { color: var(--ink) !important; }
+    .modal-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 0 12px; text-align: left; }
+    .modal-grid .field { margin-bottom: 10px; }
+    .modal-grid .full { grid-column: 1/-1; }
+    .modal-note { padding: 10px 12px; border-radius: 10px; background: #eef5f8; color: #49677e; font-size: 15px; text-align: left; }
+    .credential-mask { font-family: ui-monospace,monospace; letter-spacing: .22em; font-size: 20px; padding: 13px; border-radius: 10px; border: 1px dashed #b8c7d2; background: #f4f7f9; color: var(--navy-900); }
+    #pdfCanvasHost { position: fixed; left: -10000px; top: 0; background: #fff; }
+    .swal2-input, .swal2-select, .swal2-textarea { font-size: 17px !important; }
+    @media (max-width: 1100px) {
+      #appScreen { grid-template-columns: 235px minmax(0,1fr); }
+      .stat-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .content { padding: 22px 20px 36px; }
+      .topbar { padding: 0 20px; }
+    }
+    @media (max-width: 820px) {
+      #loginScreen { grid-template-columns: 1fr; }
+      .login-visual { min-height: 230px; padding: 24px; }
+      .visual-copy { margin: 34px 0 12px; }
+      .visual-copy h1 { font-size: 35px; }
+      .visual-copy p, .visual-features { display: none; }
+      .login-panel { padding: 28px 22px 42px; }
+      #appScreen { display: block; }
+      .sidebar { position: fixed; z-index: 40; left: -275px; top: 0; width: 260px; transition: left .22s ease; box-shadow: 10px 0 35px rgba(0,0,0,.18); }
+      .sidebar.open { left: 0; }
+      .mobile-overlay.show { display: block; position: fixed; inset: 0; z-index: 30; background: rgba(4,16,28,.42); }
+      .mobile-menu { display: grid; }
+      .topbar { height: 64px; padding: 0 14px; }
+      .page-title { font-size: 19px; }
+      .content { padding: 18px 14px 30px; }
+      .panel-grid { grid-template-columns: 1fr; }
+      .top-actions .user-name { display: none; }
+    }
+    @media (max-width: 520px) {
+      body { font-size: 17px; }
+      .stat-grid { grid-template-columns: 1fr 1fr; gap: 9px; }
+      .stat-card { min-height: 93px; padding: 12px; gap: 9px; }
+      .stat-icon { width: 37px; height: 37px; font-size: 16px; }
+      .stat-card strong { font-size: 25px; }
+      .stat-card span { font-size: 13px; }
+      .page-heading h1 { font-size: 25px; }
+      .heading-actions { width: 100%; }
+      .heading-actions .btn { flex: 1; }
+      .modal-grid { grid-template-columns: 1fr; }
+      .modal-grid .full { grid-column: auto; }
+      .visual-copy h1 { font-size: 29px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ===================================================================
+       05. LOGIN SCREEN
+       =================================================================== -->
+  <section id="loginScreen">
+    <div class="login-visual">
+      <div class="brand-lockup">
+        <div class="brand-mark"><i class="fa-solid fa-landmark"></i></div>
+        <div>
+          <div class="brand-title">ระบบทะเบียนรับ–ส่งหนังสือ</div>
+          <div class="brand-subtitle">DOCUMENT REGISTRY SYSTEM</div>
+        </div>
+      </div>
+      <div class="visual-copy">
+        <div class="eyebrow" style="color:#8bd2ca">OFFICIAL DOCUMENT WORKFLOW</div>
+        <h1>จัดการหนังสือราชการ<br>อย่างเป็นระบบและตรวจสอบได้</h1>
+        <p>ศูนย์กลางการรับ–ส่ง ติดตาม และจัดเก็บหนังสือของหน่วยงาน พร้อมประวัติการดำเนินงานและรายงานสำหรับผู้บริหาร</p>
+      </div>
+      <div class="visual-features">
+        <div class="visual-feature"><i class="fa-solid fa-folder-open"></i><strong>ทะเบียนดิจิทัล</strong><span>ค้นหาและติดตามได้</span></div>
+        <div class="visual-feature"><i class="fa-solid fa-shield-halved"></i><strong>ควบคุมสิทธิ์</strong><span>แยกข้อมูลหน่วยงาน</span></div>
+        <div class="visual-feature"><i class="fa-solid fa-file-pdf"></i><strong>เอกสาร PDF</strong><span>จัดพิมพ์แบบทางการ</span></div>
+      </div>
+    </div>
+    <div class="login-panel">
+      <div class="login-box">
+        <div class="eyebrow">SECURE ACCESS</div>
+        <h2 id="loginTitle">เข้าสู่ระบบหน่วยงาน</h2>
+        <p class="intro" id="loginIntro">กรอกรหัสหน่วยงานเพื่อตรวจสอบและเข้าสู่ระบบ</p>
+
+        <form id="agencyForm">
+          <div class="field">
+            <label for="agencyCodeInput">รหัสหน่วยงาน</label>
+            <input class="control" id="agencyCodeInput" name="agencyCode" maxlength="24" autocomplete="organization" placeholder="เช่น ORG001 หรือ SYSTEM" required>
+          </div>
+          <button class="btn btn-primary login-submit" type="submit" id="lookupAgencyBtn"><i class="fa-solid fa-arrow-right-to-bracket"></i> ตรวจสอบรหัสหน่วยงาน</button>
+        </form>
+
+        <div id="credentialsPanel" class="hidden">
+          <div class="agency-preview">
+            <div class="agency-logo" id="agencyLogo"><i class="fa-solid fa-building-columns"></i></div>
+            <div style="min-width:0">
+              <div class="agency-name" id="agencyNameText">ชื่อหน่วยงาน</div>
+              <div class="agency-code" id="agencyCodeText">รหัสหน่วยงาน</div>
+            </div>
+            <button class="icon-button" id="changeAgencyBtn" type="button" title="เปลี่ยนหน่วยงาน"><i class="fa-solid fa-pen"></i></button>
+          </div>
+          <form id="loginForm">
+            <div class="field">
+              <label for="usernameInput">ชื่อผู้ใช้งาน</label>
+              <input class="control" id="usernameInput" name="username" autocomplete="username" placeholder="Username" required>
+            </div>
+            <div class="field">
+              <label for="passwordInput">รหัสผ่าน</label>
+              <div class="input-wrap">
+                <input class="control" id="passwordInput" name="password" type="password" autocomplete="current-password" placeholder="Password" required>
+                <button type="button" class="input-action" id="togglePassword" aria-label="แสดงหรือซ่อนรหัสผ่าน"><i class="fa-regular fa-eye"></i></button>
+              </div>
+            </div>
+            <div class="remember-row">
+              <label class="check-line"><input type="checkbox" id="rememberLogin"> จดจำหน่วยงานและชื่อผู้ใช้</label>
+              <button class="text-button" type="button" id="forgotPasswordBtn">ลืมรหัสผ่าน?</button>
+            </div>
+            <button class="btn btn-primary login-submit" type="submit" id="loginBtn"><i class="fa-solid fa-lock"></i> เข้าสู่ระบบ</button>
+          </form>
+        </div>
+        <div class="login-foot">ระบบสารบรรณอิเล็กทรอนิกส์ • ใช้งานผ่านการเชื่อมต่อที่ปลอดภัย</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================================
+       06. APPLICATION SHELL
+       =================================================================== -->
+  <div id="appScreen" class="hidden">
+    <div class="mobile-overlay" id="mobileOverlay"></div>
+    <aside class="sidebar" id="sidebar">
+      <div class="side-brand">
+        <div class="brand-mark"><i class="fa-solid fa-landmark"></i></div>
+        <div><div class="brand-title">ทะเบียนหนังสือ</div><div class="brand-subtitle">DOCUMENT REGISTRY</div></div>
+      </div>
+      <div class="side-agency"><strong id="sideAgencyName">ชื่อหน่วยงาน</strong><span id="sideAgencyCode">AGENCY CODE</span></div>
+      <nav class="side-nav" id="sideNav">
+        <div class="nav-label">ภาพรวม</div>
+        <button class="nav-link active" data-view="dashboard"><i class="fa-solid fa-chart-pie"></i> หน้าหลัก</button>
+        <div class="nav-label">ทะเบียนหนังสือ</div>
+        <button class="nav-link" data-view="incoming"><i class="fa-solid fa-inbox"></i> ทะเบียนหนังสือรับ</button>
+        <button class="nav-link" data-view="outgoing"><i class="fa-solid fa-paper-plane"></i> ทะเบียนหนังสือส่ง</button>
+        <button class="nav-link" data-view="assignments"><i class="fa-solid fa-list-check"></i> งานที่ได้รับมอบหมาย</button>
+        <button class="nav-link" data-view="search"><i class="fa-solid fa-magnifying-glass"></i> ค้นหาหนังสือ</button>
+        <div class="nav-label">เอกสารและรายงาน</div>
+        <button class="nav-link" data-view="files"><i class="fa-solid fa-folder-open"></i> แฟ้มเอกสารกลาง</button>
+        <button class="nav-link" data-view="reports"><i class="fa-solid fa-chart-column"></i> รายงานและสถิติ</button>
+        <button class="nav-link" data-view="notifications"><i class="fa-regular fa-bell"></i> การแจ้งเตือน</button>
+        <div class="nav-label">บัญชีของฉัน</div>
+        <button class="nav-link" data-view="profile"><i class="fa-regular fa-user"></i> โปรไฟล์และรหัสผ่าน</button>
+        <button class="nav-link" data-view="settings"><i class="fa-solid fa-sliders"></i> ตั้งค่าหน่วยงาน</button>
+      </nav>
+      <div class="side-footer">
+        <div class="side-user">
+          <div class="avatar" id="sideAvatar">U</div>
+          <div class="side-user-text"><strong id="sideUserName">ผู้ใช้งาน</strong><span id="sideUserRole">เจ้าหน้าที่</span></div>
+          <button class="icon-button btn-icon" id="logoutBtn" title="ออกจากระบบ"><i class="fa-solid fa-arrow-right-from-bracket"></i></button>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main-column">
+      <header class="topbar">
+        <div class="top-left">
+          <button class="icon-button mobile-menu" id="mobileMenuBtn" title="เปิดเมนู"><i class="fa-solid fa-bars"></i></button>
+          <div class="page-title" id="topPageTitle">หน้าหลัก</div>
+        </div>
+        <div class="top-actions">
+          <button class="icon-button" id="globalSearchBtn" title="ค้นหาหนังสือ"><i class="fa-solid fa-magnifying-glass"></i></button>
+          <button class="icon-button" id="notificationBtn" title="การแจ้งเตือน"><i class="fa-regular fa-bell"></i><span class="notification-dot hidden" id="notificationDot"></span></button>
+          <span class="muted small user-name" id="topUserName"></span>
+        </div>
+      </header>
+      <section class="content" id="contentArea"></section>
+    </main>
+  </div>
+
+  <div id="pdfCanvasHost" aria-hidden="true"></div>
+
+  <!-- ===================================================================
+       07. THIRD-PARTY LIBRARIES
+       =================================================================== -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.15.3/dist/sweetalert2.all.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
+
+  <script>
+    'use strict';
+
+    /* =====================================================================
+       08. APPLICATION CONFIGURATION
+       ===================================================================== */
+    const APP_CONFIG = Object.freeze({
+      // Set this to the deployed API Gateway URL. Never place GATEWAY_SHARED_SECRET here.
+      API_GATEWAY_URL: 'https://YOUR-CLOUDFLARE-WORKER.workers.dev/api',
+      APP_VERSION: '1.0.0',
+      DEFAULT_PAGE_SIZE: 50,
+      MAX_UPLOAD_BYTES: 8 * 1024 * 1024,
+      TIMEZONE: 'Asia/Bangkok'
+    });
+
+    /* =====================================================================
+       09. RUNTIME STATE AND PERMISSION HELPERS
+       ===================================================================== */
+    const state = {
+      agency: null,
+      user: null,
+      permissions: [],
+      currentView: 'dashboard',
+      currentBook: null,
+      dashboardChart: null,
+      lookup: { departments: [], users: [], documentTypes: [], categories: [] },
+      unreadCount: 0
+    };
+
+    const $ = (selector, root = document) => root.querySelector(selector);
+    const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
+    const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+    const asArray = value => Array.isArray(value) ? value : (value && Array.isArray(value.items) ? value.items : []);
+    const valueOf = (object, camel, snake) => object?.[camel] ?? object?.[snake] ?? '';
+    const thaiDate = value => {
+      if (!value) return '-';
+      const d = new Date(String(value).slice(0, 10) + 'T00:00:00');
+      return Number.isNaN(d.getTime()) ? escapeHtml(value) : new Intl.DateTimeFormat('th-TH', {dateStyle:'medium'}).format(d);
+    };
+    const statusText = value => ({RECEIVED:'รับเข้าแล้ว',PENDING:'รอดำเนินการ',IN_PROGRESS:'อยู่ระหว่างดำเนินการ',COMPLETED:'ดำเนินการแล้ว',REGISTERED:'ลงทะเบียนแล้ว',CANCELLED:'ยกเลิก',ACTIVE:'ใช้งาน',INACTIVE:'ระงับ'}[String(value || '').toUpperCase()] || value || 'ไม่ระบุ');
+    const statusClass = value => String(value || '').toLowerCase().replace(/[^a-z_]/g, '');
+    const can = permission => state.user?.isSuperAdmin || state.permissions.includes('*') || state.permissions.includes(permission);
+    const agencyId = () => state.agency?.agencyId || state.user?.agencyId || '';
+    const isGatewayConfigured = () => APP_CONFIG.API_GATEWAY_URL && !APP_CONFIG.API_GATEWAY_URL.includes('YOUR-CLOUDFLARE-WORKER');
+
+    /* =====================================================================
+       10. API CLIENT - COOKIE SESSION IS MANAGED BY THE API GATEWAY
+       ===================================================================== */
+    async function api(action, data = {}) {
+      if (!isGatewayConfigured()) throw new Error('ยังไม่ได้กำหนด API_GATEWAY_URL ใน index.html');
+      let response;
+      try {
+        response = await fetch(APP_CONFIG.API_GATEWAY_URL, {
+          method: 'POST',
+          credentials: 'include',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({action, data, userAgent: navigator.userAgent})
+        });
+      } catch (error) {
+        throw new Error('เชื่อมต่อ API Gateway ไม่สำเร็จ กรุณาตรวจสอบ URL และ CORS');
+      }
+      let payload;
+      try { payload = await response.json(); }
+      catch (error) { throw new Error('API Gateway ส่งผลลัพธ์ที่ไม่ใช่ JSON'); }
+      if (!response.ok || payload.ok === false) throw new Error(payload.message || payload.error || `HTTP ${response.status}`);
+      if (payload.ok === true && Object.prototype.hasOwnProperty.call(payload, 'data')) return payload.data;
+      return payload.data ?? payload;
+    }
+
+    /* =====================================================================
+       11. ALERTS, LOADING AND DOWNLOAD UTILITIES
+       ===================================================================== */
+    const Toast = Swal.mixin({toast:true,position:'top-end',showConfirmButton:false,timer:3000,timerProgressBar:true});
+    function notify(message, icon='success') { Toast.fire({icon, title:message}); }
+    function showError(error) { Swal.fire({icon:'error',title:'ไม่สามารถดำเนินการได้',text:error?.message || String(error),confirmButtonText:'รับทราบ'}); }
+    async function withLoading(title, callback) {
+      Swal.fire({title:title || 'กำลังประมวลผล',allowOutsideClick:false,allowEscapeKey:false,didOpen:()=>Swal.showLoading()});
+      try { const result = await callback(); Swal.close(); return result; }
+      catch (error) { Swal.close(); showError(error); throw error; }
+    }
+    function base64ToBlob(base64, mimeType) {
+      const binary = atob(base64);
+      const chunks = [];
+      for (let offset=0; offset<binary.length; offset+=1024*1024) {
+        const slice = binary.slice(offset, offset+1024*1024);
+        const bytes = new Uint8Array(slice.length);
+        for (let i=0;i<slice.length;i++) bytes[i]=slice.charCodeAt(i);
+        chunks.push(bytes);
+      }
+      return new Blob(chunks, {type:mimeType || 'application/octet-stream'});
+    }
+    function downloadBlob(blob, fileName) {
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url; anchor.download = fileName || 'download'; anchor.style.display = 'none';
+      document.body.appendChild(anchor); anchor.click(); anchor.remove();
+      setTimeout(()=>URL.revokeObjectURL(url), 30000);
+    }
+    function downloadApiFile(result) {
+      if (!result?.fileBase64) throw new Error('API ไม่ได้ส่งข้อมูลไฟล์กลับมา');
+      downloadBlob(base64ToBlob(result.fileBase64, result.mimeType), result.fileName || 'document');
+    }
+    function readFileAsDataUrl(file) {
+      return new Promise((resolve,reject)=>{
+        const reader = new FileReader();
+        reader.onload = ()=>resolve(String(reader.result));
+        reader.onerror = ()=>reject(new Error('อ่านไฟล์ไม่สำเร็จ'));
+        reader.readAsDataURL(file);
+      });
+    }
+
+    /* =====================================================================
+       12. LOGIN, AGENCY LOOKUP AND SESSION INITIALIZATION
+       ===================================================================== */
+    function getRememberedLogin() {
+      try { return JSON.parse(localStorage.getItem('drs_remember') || '{}'); }
+      catch (error) { return {}; }
+    }
+    function setLoginStep(step) {
+      const agencyForm = $('#agencyForm');
+      const credentialPanel = $('#credentialsPanel');
+      if (step === 'credentials') {
+        agencyForm.classList.add('hidden'); credentialPanel.classList.remove('hidden');
+        $('#loginTitle').textContent = 'เข้าสู่ระบบ';
+        $('#loginIntro').textContent = 'ลงชื่อเข้าใช้ด้วยบัญชีของหน่วยงาน';
+      } else {
+        agencyForm.classList.remove('hidden'); credentialPanel.classList.add('hidden');
+        $('#loginTitle').textContent = 'เข้าสู่ระบบหน่วยงาน';
+        $('#loginIntro').textContent = 'กรอกรหัสหน่วยงานเพื่อตรวจสอบและเข้าสู่ระบบ';
+      }
+    }
+    function showAgencyPreview(agency) {
+      state.agency = agency;
+      $('#agencyNameText').textContent = agency.agencyName || 'หน่วยงาน';
+      $('#agencyCodeText').textContent = `รหัสหน่วยงาน: ${agency.agencyCode || ''}`;
+      const logo = $('#agencyLogo');
+      logo.innerHTML = agency.logoUrl ? `<img src="${escapeHtml(agency.logoUrl)}" alt="โลโก้หน่วยงาน" referrerpolicy="no-referrer">` : '<i class="fa-solid fa-building-columns"></i>';
+      setLoginStep('credentials');
+      $('#usernameInput').focus();
+    }
+    async function handleAgencyLookup(event) {
+      event.preventDefault();
+      const code = $('#agencyCodeInput').value.trim().toUpperCase();
+      if (!code) return notify('กรุณากรอกรหัสหน่วยงาน','warning');
+      await withLoading('กำลังตรวจสอบรหัสหน่วยงาน', async ()=>{
+        const agency = await api('public.agencyLookup',{agencyCode:code});
+        showAgencyPreview(agency);
+      });
+    }
+    async function handleLogin(event) {
+      event.preventDefault();
+      const username = $('#usernameInput').value.trim();
+      const password = $('#passwordInput').value;
+      if (!state.agency) return notify('กรุณาตรวจสอบรหัสหน่วยงานก่อน','warning');
+      const result = await withLoading('กำลังเข้าสู่ระบบ', ()=>api('auth.login',{agencyCode:state.agency.agencyCode,username,password}));
+      if (!result?.user) throw new Error('API Gateway ไม่ได้ส่งข้อมูลผู้ใช้งานกลับมา');
+      // The API Gateway must store result.token in a Secure, HttpOnly cookie
+      // and remove token from the browser-visible response. No token is persisted here.
+      if ($('#rememberLogin').checked) {
+        localStorage.setItem('drs_remember',JSON.stringify({agencyCode:state.agency.agencyCode,username}));
+      } else localStorage.removeItem('drs_remember');
+      state.user = result.user; state.agency = result.agency || state.agency; state.permissions = result.permissions || [];
+      if (result.mustChangePassword || result.user.mustChangePassword) {
+        await forcePasswordChange();
+        return;
+      }
+      if (result.user.isSuperAdmin) { location.href = 'dashboard.html'; return; }
+      await enterApplication();
+    }
+    async function forcePasswordChange() {
+      const {value:form} = await Swal.fire({
+        title:'กรุณากำหนดรหัสผ่านใหม่', icon:'warning', text:'บัญชีนี้ต้องเปลี่ยนรหัสผ่านก่อนใช้งานระบบ',
+        html:'<div class="field"><label>รหัสผ่านปัจจุบัน</label><input id="swalCurrent" type="password" class="swal2-input" autocomplete="current-password"></div><div class="field"><label>รหัสผ่านใหม่ (อย่างน้อย 12 ตัวอักษร)</label><input id="swalNew" type="password" class="swal2-input" autocomplete="new-password"></div><div class="field"><label>ยืนยันรหัสผ่านใหม่</label><input id="swalConfirm" type="password" class="swal2-input" autocomplete="new-password"></div>',
+        confirmButtonText:'เปลี่ยนรหัสผ่าน',allowOutsideClick:false,allowEscapeKey:false,
+        preConfirm:()=>{
+          const currentPassword=$('#swalCurrent').value,newPassword=$('#swalNew').value,confirm=$('#swalConfirm').value;
+          if(!currentPassword||newPassword.length<12||newPassword!==confirm){Swal.showValidationMessage('กรอกข้อมูลให้ครบ รหัสผ่านใหม่ต้องไม่น้อยกว่า 12 ตัวและตรงกัน');return false;}
+          return {currentPassword,newPassword};
+        }
+      });
+      if (!form) return;
+      await withLoading('กำลังเปลี่ยนรหัสผ่าน',()=>api('auth.changePassword',form));
+      await Swal.fire({icon:'success',title:'เปลี่ยนรหัสผ่านแล้ว',text:'กรุณาเข้าสู่ระบบใหม่ด้วยรหัสผ่านใหม่'});
+      await api('auth.logout',{}).catch(()=>{});
+      state.user=null; state.agency=null; state.permissions=[]; showLoginScreen();
+    }
+    async function restoreSession() {
+      if (!isGatewayConfigured()) return;
+      try {
+        const data = await api('auth.me',{});
+        if (!data?.user) return;
+        state.user = data.user; state.agency = data.agency || null; state.permissions = data.permissions || [];
+        if (state.user.mustChangePassword) { await forcePasswordChange(); return; }
+        if (state.user.isSuperAdmin) { location.href = 'dashboard.html'; return; }
+        await enterApplication();
+      } catch (error) {
+        // An unauthenticated visitor remains on the login screen.
+      }
+    }
+    function showLoginScreen() {
+      $('#appScreen').classList.add('hidden'); $('#loginScreen').classList.remove('hidden');
+      setLoginStep('agency'); state.user=null; state.agency=null; state.permissions=[];
+    }
+
+    /* =====================================================================
+       13. APPLICATION NAVIGATION AND SHARED SHELL
+       ===================================================================== */
+    const viewTitles = {
+      dashboard:'หน้าหลัก',incoming:'ทะเบียนหนังสือรับ',outgoing:'ทะเบียนหนังสือส่ง',
+      assignments:'งานที่ได้รับมอบหมาย',search:'ค้นหาหนังสือ',files:'แฟ้มเอกสารกลาง',
+      reports:'รายงานและสถิติ',notifications:'การแจ้งเตือน',profile:'โปรไฟล์และรหัสผ่าน',settings:'ตั้งค่าหน่วยงาน'
+    };
+    async function enterApplication() {
+      $('#loginScreen').classList.add('hidden'); $('#appScreen').classList.remove('hidden');
+      $('#sideAgencyName').textContent = state.agency?.agencyName || (state.user?.isSuperAdmin?'ส่วนกลาง':'หน่วยงาน');
+      $('#sideAgencyCode').textContent = state.agency?.agencyCode || 'SYSTEM';
+      $('#sideUserName').textContent = state.user?.displayName || state.user?.username || 'ผู้ใช้งาน';
+      $('#sideUserRole').textContent = state.user?.isSuperAdmin ? 'Super Admin' : (state.user?.position || 'ผู้ใช้งาน');
+      $('#topUserName').textContent = state.user?.displayName || state.user?.username || '';
+      $('#sideAvatar').innerHTML = state.user?.avatarUrl ? `<img src="${escapeHtml(state.user.avatarUrl)}" alt="">` : escapeHtml((state.user?.displayName||'U').slice(0,1));
+      await loadLookups();
+      await navigate('dashboard');
+      refreshNotificationCount();
+    }
+    async function loadLookups() {
+      const tasks = [
+        api('departments.list',{agencyId:agencyId(),page:1,pageSize:200}),
+        api('users.list',{agencyId:agencyId(),page:1,pageSize:200}),
+        api('documentTypes.list',{agencyId:agencyId(),page:1,pageSize:200}),
+        api('categories.list',{agencyId:agencyId(),page:1,pageSize:200})
+      ];
+      const results = await Promise.allSettled(tasks);
+      ['departments','users','documentTypes','categories'].forEach((key,index)=>{
+        state.lookup[key] = results[index].status==='fulfilled' ? asArray(results[index].value) : [];
+        if (key === 'users') state.lookup.users = state.lookup.users.map(u => ({...u, user_id:u.userId, display_name:u.displayName, department_id:u.departmentId, role_id:u.roleId}));
+      });
+    }
+    async function navigate(view) {
+      state.currentView = view;
+      $$('.nav-link').forEach(button=>button.classList.toggle('active',button.dataset.view===view));
+      $('#topPageTitle').textContent = viewTitles[view] || 'ระบบทะเบียน';
+      $('#sidebar').classList.remove('open'); $('#mobileOverlay').classList.remove('show');
+      try {
+        const renderer = {
+          dashboard:renderDashboard,incoming:()=>renderBookRegistry('INCOMING'),outgoing:()=>renderBookRegistry('OUTGOING'),
+          assignments:renderAssignments,search:renderSearch,files:renderFiles,reports:renderReports,
+          notifications:renderNotifications,profile:renderProfile,settings:renderSettings
+        }[view];
+        if (renderer) await renderer();
+      } catch (error) { showError(error); }
+    }
+    $('#sideNav').addEventListener('click',event=>{
+      const button=event.target.closest('[data-view]');
+      if(button) navigate(button.dataset.view);
+    });
+    $('#mobileMenuBtn').addEventListener('click',()=>{$('#sidebar').classList.add('open');$('#mobileOverlay').classList.add('show');});
+    $('#mobileOverlay').addEventListener('click',()=>{$('#sidebar').classList.remove('open');$('#mobileOverlay').classList.remove('show');});
+    $('#globalSearchBtn').addEventListener('click',()=>navigate('search'));
+    $('#notificationBtn').addEventListener('click',()=>navigate('notifications'));
+    $('#logoutBtn').addEventListener('click',async()=>{
+      const confirm=await Swal.fire({title:'ออกจากระบบ?',text:'คุณต้องการสิ้นสุดการเข้าสู่ระบบหรือไม่',icon:'question',showCancelButton:true,confirmButtonText:'ออกจากระบบ',cancelButtonText:'ยกเลิก'});
+      if(!confirm.isConfirmed)return;
+      await api('auth.logout',{}).catch(()=>{}); showLoginScreen(); notify('ออกจากระบบแล้ว');
+    });
+
+    /* =====================================================================
+       14. DASHBOARD VIEW
+       ===================================================================== */
+    async function renderDashboard() {
+      const report = await api('reports.summary',{agencyId:agencyId()});
+      $('#contentArea').innerHTML = `
+        <div class="page-heading"><div><div class="eyebrow">OVERVIEW</div><h1>ภาพรวมการดำเนินงาน</h1><p>สรุปทะเบียนหนังสือและสถานะงานของหน่วยงาน ประจำปีงบประมาณ ${escapeHtml(report.fiscalYear || '')}</p></div><div class="heading-actions"><button class="btn btn-light" onclick="navigate('reports')"><i class="fa-solid fa-chart-column"></i> ดูรายงาน</button></div></div>
+        <div class="stat-grid">
+          <div class="card stat-card"><div class="stat-icon"><i class="fa-solid fa-inbox"></i></div><div><strong>${Number(report.incomingTotal||0).toLocaleString('th-TH')}</strong><span>หนังสือรับทั้งหมด</span></div></div>
+          <div class="card stat-card"><div class="stat-icon"><i class="fa-solid fa-paper-plane"></i></div><div><strong>${Number(report.outgoingTotal||0).toLocaleString('th-TH')}</strong><span>หนังสือส่งทั้งหมด</span></div></div>
+          <div class="card stat-card"><div class="stat-icon"><i class="fa-solid fa-hourglass-half"></i></div><div><strong>${Number(report.pendingAssignments||0).toLocaleString('th-TH')}</strong><span>งานรอดำเนินการ</span></div></div>
+          <div class="card stat-card"><div class="stat-icon"><i class="fa-solid fa-triangle-exclamation"></i></div><div><strong>${Number(report.overdueAssignments||0).toLocaleString('th-TH')}</strong><span>งานเกินกำหนด</span></div></div>
+        </div>
+        <div class="panel-grid">
+          <div class="card"><div class="panel-title"><h3>ปริมาณหนังสือรายเดือน</h3><span class="muted small">ปีงบประมาณ ${escapeHtml(report.fiscalYear||'')}</span></div><div class="panel-body"><div class="chart-wrap"><canvas id="monthlyChart"></canvas></div></div></div>
+          <div class="card"><div class="panel-title"><h3>สถานะการดำเนินงาน</h3><button class="text-button" onclick="navigate('assignments')">ดูงานทั้งหมด</button></div><div class="panel-body"><div class="list-stack">
+            <div class="list-item"><div class="list-symbol"><i class="fa-solid fa-inbox"></i></div><div><strong>${Number(report.pendingIncoming||0).toLocaleString('th-TH')} รายการ</strong><p>หนังสือรับที่ยังอยู่ในกระบวนการ</p></div></div>
+            <div class="list-item"><div class="list-symbol"><i class="fa-solid fa-list-check"></i></div><div><strong>${Number(report.completedAssignments||0).toLocaleString('th-TH')} รายการ</strong><p>งานที่ดำเนินการเรียบร้อย</p></div></div>
+            <div class="list-item"><div class="list-symbol"><i class="fa-solid fa-clock"></i></div><div><strong>${Number(report.overdueAssignments||0).toLocaleString('th-TH')} รายการ</strong><p>งานที่เกินกำหนดดำเนินการ</p></div></div>
+          </div></div></div>
+        </div>
+        <div class="card" style="margin-top:16px"><div class="panel-title"><h3>ทางลัดการทำงาน</h3></div><div class="panel-body" style="display:flex;gap:9px;flex-wrap:wrap"><button class="btn btn-primary" onclick="openBookForm('INCOMING')"><i class="fa-solid fa-plus"></i> ลงทะเบียนหนังสือรับ</button><button class="btn btn-teal" onclick="openBookForm('OUTGOING')"><i class="fa-solid fa-plus"></i> ลงทะเบียนหนังสือส่ง</button><button class="btn btn-light" onclick="navigate('search')"><i class="fa-solid fa-magnifying-glass"></i> ค้นหาหนังสือ</button></div></div>`;
+      if(state.dashboardChart) state.dashboardChart.destroy();
+      const monthly = report.monthly || {};
+      const labels = Object.keys(monthly).sort().map(month=>`เดือน ${Number(month)}`);
+      const incoming = Object.keys(monthly).sort().map(month=>Number(monthly[month].incoming||0));
+      const outgoing = Object.keys(monthly).sort().map(month=>Number(monthly[month].outgoing||0));
+      state.dashboardChart = new Chart($('#monthlyChart'),{type:'bar',data:{labels,datasets:[{label:'หนังสือรับ',data:incoming,backgroundColor:'#2d6ea5',borderRadius:5},{label:'หนังสือส่ง',data:outgoing,backgroundColor:'#23968e',borderRadius:5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{family:'Sarabun'}}}},scales:{x:{grid:{display:false}},y:{beginAtZero:true,ticks:{precision:0}}}}});
+    }
+
+    /* =====================================================================
+       15. INCOMING AND OUTGOING REGISTRY VIEWS
+       ===================================================================== */
+    async function renderBookRegistry(type, filters={}) {
+      const incoming = type==='INCOMING';
+      const action = incoming?'books.incoming.list':'books.outgoing.list';
+      const records = asArray(await api(action,{agencyId:agencyId(),page:1,pageSize:200,...filters}));
+      const title = incoming?'ทะเบียนหนังสือรับ':'ทะเบียนหนังสือส่ง';
+      const dateField = incoming?'receivedDate':'sentDate';
+      const partyField = incoming?'senderAgency':'recipientAgency';
+      $('#contentArea').innerHTML = `
+        <div class="page-heading"><div><div class="eyebrow">REGISTRY MANAGEMENT</div><h1>${title}</h1><p>จัดเก็บ ค้นหา แก้ไข และติดตามรายการหนังสือของหน่วยงาน</p></div><div class="heading-actions"><button class="btn btn-primary" onclick="openBookForm('${type}')"><i class="fa-solid fa-plus"></i> เพิ่มทะเบียน</button><button class="btn btn-light" onclick="exportRegistryPdf('${type}')"><i class="fa-solid fa-file-pdf"></i> พิมพ์ PDF</button></div></div>
+        <div class="card card-pad"><div class="toolbar"><input id="registrySearch" class="control search-control" placeholder="ค้นหาเลขทะเบียน เลขที่หนังสือ หรือเรื่อง"><select id="registryStatus" class="control"><option value="">ทุกสถานะ</option><option value="RECEIVED">รับเข้าแล้ว</option><option value="PENDING">รอดำเนินการ</option><option value="IN_PROGRESS">อยู่ระหว่างดำเนินการ</option><option value="COMPLETED">ดำเนินการแล้ว</option><option value="CANCELLED">ยกเลิก</option></select><select id="registryYear" class="control"><option value="">ทุกปี</option>${Array.from(new Set(records.map(r=>r.registrationYear))).filter(Boolean).sort((a,b)=>b-a).map(year=>`<option value="${escapeHtml(year)}">${escapeHtml(year)}</option>`).join('')}</select><button class="btn btn-light" id="registryFilterBtn"><i class="fa-solid fa-filter"></i> ค้นหา</button></div>
+        <div class="table-wrap"><table class="data-table"><thead><tr><th>เลขทะเบียน</th><th>วันที่</th><th>เลขที่หนังสือ</th><th>จาก / ถึง</th><th>เรื่อง</th><th>ความเร็ว</th><th>สถานะ</th><th>ดำเนินการ</th></tr></thead><tbody id="registryRows">${renderBookRows(records,type,dateField,partyField)}</tbody></table></div>
+        <div class="muted small" style="margin-top:10px">แสดง ${records.length} รายการล่าสุด • ค้นหาได้สูงสุด 200 รายการต่อคำขอ</div></div>`;
+      $('#registryFilterBtn').addEventListener('click',()=>renderBookRegistry(type,{search:$('#registrySearch').value.trim(),status:$('#registryStatus').value,year:$('#registryYear').value}));
+      $('#registrySearch').addEventListener('keydown',event=>{if(event.key==='Enter')$('#registryFilterBtn').click();});
+      $('#registryRows').addEventListener('click',event=>{
+        const button=event.target.closest('[data-action]'); if(!button)return;
+        const id=button.dataset.id,record=records.find(item=>item.bookId===id); if(!record)return;
+        if(button.dataset.action==='view') viewBook(type,id);
+        if(button.dataset.action==='edit') openBookForm(type,record);
+        if(button.dataset.action==='delete') cancelBook(type,id);
+      });
+    }
+    function renderBookRows(records,type,dateField,partyField) {
+      if(!records.length)return '<tr><td colspan="8"><div class="empty-state"><i class="fa-regular fa-folder-open"></i><strong>ยังไม่มีรายการทะเบียน</strong><span>เพิ่มรายการหนังสือเพื่อเริ่มต้นใช้งาน</span></div></td></tr>';
+      return records.map(record=>`<tr>
+        <td><span class="table-primary">${escapeHtml(record.registrationNo||'-')}</span></td>
+        <td>${thaiDate(record[dateField])}</td><td>${escapeHtml(record.documentNumber||'-')}</td>
+        <td>${escapeHtml(record[partyField]||record.senderName||record.recipientName||'-')}</td>
+        <td><span class="table-primary">${escapeHtml(record.subject||'-')}</span></td>
+        <td>${escapeHtml(record.priorityLevel||'ปกติ')}</td><td><span class="status ${statusClass(record.status)}">${escapeHtml(statusText(record.status))}</span></td>
+        <td><div class="actions-cell"><button class="mini-btn" title="ดูรายละเอียด" data-action="view" data-id="${escapeHtml(record.bookId)}"><i class="fa-regular fa-eye"></i></button><button class="mini-btn" title="แก้ไข" data-action="edit" data-id="${escapeHtml(record.bookId)}"><i class="fa-regular fa-pen-to-square"></i></button><button class="mini-btn danger" title="ยกเลิกทะเบียน" data-action="delete" data-id="${escapeHtml(record.bookId)}"><i class="fa-regular fa-trash-can"></i></button></div></td>
+      </tr>`).join('');
+    }
+
+    /* =====================================================================
+       16. BOOK CREATE / EDIT FORMS
+       ===================================================================== */
+    function lookupOptions(items,idKey,labelKey,selected='') {
+      return '<option value="">-- ไม่ระบุ --</option>'+items.map(item=>`<option value="${escapeHtml(item[idKey])}" ${item[idKey]===selected?'selected':''}>${escapeHtml(item[labelKey])}</option>`).join('');
+    }
+    async function openBookForm(type, existing=null) {
+      const incoming=type==='INCOMING';
+      const item=existing||{};
+      const partyLabel=incoming?'หน่วยงานต้นทาง':'หน่วยงานปลายทาง';
+      const dateLabel=incoming?'วันที่รับ':'วันที่ส่ง';
+      const dateValue=incoming?(item.receivedDate||''):(item.sentDate||'');
+      const html=`<div class="modal-grid">
+        <div class="field"><label>${dateLabel}</label><input id="bookDate" type="date" class="control" value="${escapeHtml(dateValue||new Date().toISOString().slice(0,10))}"></div>
+        <div class="field"><label>เลขที่หนังสือ</label><input id="bookDocNo" class="control" value="${escapeHtml(item.documentNumber||'')}" placeholder="เช่น กค 001/123"></div>
+        <div class="field"><label>ลงวันที่</label><input id="bookDocDate" type="date" class="control" value="${escapeHtml(item.documentDate||'')}"></div>
+        <div class="field"><label>${partyLabel}</label><input id="bookParty" class="control" value="${escapeHtml(incoming?item.senderAgency||'':item.recipientAgency||'')}"></div>
+        <div class="field full"><label>เรื่อง <span style="color:#b83a45">*</span></label><input id="bookSubject" class="control" value="${escapeHtml(item.subject||'')}" placeholder="ระบุชื่อเรื่องหนังสือ"></div>
+        <div class="field"><label>ประเภทหนังสือ</label><select id="bookDocType" class="control">${lookupOptions(state.lookup.documentTypes,'document_type_id','type_name',item.documentTypeId||'')}</select></div>
+        <div class="field"><label>หมวดหมู่</label><select id="bookCategory" class="control">${lookupOptions(state.lookup.categories,'category_id','category_name',item.categoryId||'')}</select></div>
+        <div class="field"><label>ชั้นความเร็ว</label><select id="bookPriority" class="control">${['ปกติ','ด่วน','ด่วนมาก','ด่วนที่สุด'].map(v=>`<option ${v===(item.priorityLevel||'ปกติ')?'selected':''}>${v}</option>`).join('')}</select></div>
+        <div class="field"><label>ชั้นความลับ</label><select id="bookConfidential" class="control">${['ปกติ','ลับ','ลับมาก','ลับที่สุด'].map(v=>`<option ${v===(item.confidentialityLevel||'ปกติ')?'selected':''}>${v}</option>`).join('')}</select></div>
+        <div class="field"><label>ฝ่าย/กลุ่มงาน</label><select id="bookDepartment" class="control">${lookupOptions(state.lookup.departments,'department_id','department_name',item.departmentId||'')}</select></div>
+        <div class="field"><label>ผู้รับผิดชอบ</label><select id="bookResponsible" class="control">${lookupOptions(state.lookup.users,'user_id','display_name',item.responsibleUserId||'')}</select></div>
+        ${incoming?`<div class="field"><label>ชื่อผู้ส่ง</label><input id="bookSenderName" class="control" value="${escapeHtml(item.senderName||'')}"></div><div class="field"><label>ช่องทางรับ</label><select id="bookChannel" class="control"><option value="">ไม่ระบุ</option><option>หนังสือราชการ</option><option>ไปรษณีย์</option><option>อีเมล</option><option>ระบบอิเล็กทรอนิกส์</option><option>ส่งด้วยตนเอง</option></select></div>`:`<div class="field"><label>ชื่อผู้รับ</label><input id="bookRecipientName" class="control" value="${escapeHtml(item.recipientName||'')}"></div><div class="field"><label>ช่องทางส่ง</label><select id="bookChannel" class="control"><option value="">ไม่ระบุ</option><option>ไปรษณีย์</option><option>อีเมล</option><option>ระบบอิเล็กทรอนิกส์</option><option>ส่งด้วยตนเอง</option></select></div>`}
+        <div class="field"><label>กำหนดดำเนินการ</label><input id="bookDue" type="date" class="control" value="${escapeHtml(item.dueDate||'')}"></div>
+        <div class="field"><label>เลขติดตามพัสดุ</label><input id="bookTracking" class="control" value="${escapeHtml(item.trackingNumber||'')}"></div>
+        <div class="field full"><label>สรุป/หมายเหตุ</label><textarea id="bookSummary" class="control">${escapeHtml(item.summary||item.remarks||'')}</textarea></div>
+      </div><div class="modal-note">ระบบจะสร้างเลขทะเบียนอัตโนมัติตามหน่วยงานและปีงบประมาณเมื่อบันทึกข้อมูล</div>`;
+      const dialog=await Swal.fire({title:existing?'แก้ไขทะเบียนหนังสือ':(incoming?'เพิ่มทะเบียนหนังสือรับ':'เพิ่มทะเบียนหนังสือส่ง'),html,width:820,showCancelButton:true,confirmButtonText:existing?'บันทึกการแก้ไข':'บันทึกทะเบียน',cancelButtonText:'ยกเลิก',focusConfirm:false,preConfirm:()=>{
+        const subject=$('#bookSubject').value.trim(); if(!subject){Swal.showValidationMessage('กรุณาระบุเรื่องหนังสือ');return false;}
+        const data={agencyId:agencyId(),subject,documentNumber:$('#bookDocNo').value.trim(),documentDate:$('#bookDocDate').value,
+          documentTypeId:$('#bookDocType').value,categoryId:$('#bookCategory').value,priorityLevel:$('#bookPriority').value,confidentialityLevel:$('#bookConfidential').value,
+          departmentId:$('#bookDepartment').value,responsibleUserId:$('#bookResponsible').value,dueDate:$('#bookDue').value,trackingNumber:$('#bookTracking').value,
+          summary:$('#bookSummary').value.trim(),remarks:$('#bookSummary').value.trim()};
+        data[incoming?'receivedDate':'sentDate']=$('#bookDate').value;
+        data[incoming?'senderAgency':'recipientAgency']=$('#bookParty').value.trim();
+        if(incoming){data.senderName=$('#bookSenderName').value.trim();data.receivedChannel=$('#bookChannel').value;}
+        else {data.recipientName=$('#bookRecipientName').value.trim();data.sentChannel=$('#bookChannel').value;}
+        return data;
+      }});
+      if(!dialog.isConfirmed)return;
+      const data=dialog.value;
+      await withLoading('กำลังบันทึกทะเบียน',()=>api(existing?(incoming?'books.incoming.update':'books.outgoing.update'):(incoming?'books.incoming.create':'books.outgoing.create'),existing?{...data,bookId:existing.bookId}:data));
+      notify(existing?'แก้ไขทะเบียนแล้ว':'บันทึกทะเบียนแล้ว'); await navigate(incoming?'incoming':'outgoing');
+    }
+
+    /* =====================================================================
+       17. BOOK DETAILS, WORKFLOW, ASSIGNMENT AND CANCELLATION
+       ===================================================================== */
+    async function viewBook(type,id) {
+      const incoming=type==='INCOMING';
+      const book=await withLoading('กำลังโหลดรายละเอียด',()=>api(incoming?'books.incoming.get':'books.outgoing.get',{agencyId:agencyId(),bookId:id}));
+      state.currentBook={type,book};
+      const attachments=book.attachments||[];
+      const html=`<div style="text-align:left">
+        <div class="modal-note"><strong>เลขทะเบียน ${escapeHtml(book.registrationNo||'-')}</strong> • ${escapeHtml(statusText(book.status))}</div>
+        <div class="modal-grid" style="margin-top:12px">
+          <div class="field"><label>เรื่อง</label><div>${escapeHtml(book.subject||'-')}</div></div><div class="field"><label>เลขที่หนังสือ</label><div>${escapeHtml(book.documentNumber||'-')}</div></div>
+          <div class="field"><label>วันที่ลงทะเบียน</label><div>${thaiDate(incoming?book.receivedDate:book.sentDate)}</div></div><div class="field"><label>จาก/ถึง</label><div>${escapeHtml(incoming?book.senderAgency||'-':book.recipientAgency||'-')}</div></div>
+          <div class="field"><label>ชั้นความเร็ว</label><div>${escapeHtml(book.priorityLevel||'ปกติ')}</div></div><div class="field"><label>ชั้นความลับ</label><div>${escapeHtml(book.confidentialityLevel||'ปกติ')}</div></div>
+          <div class="field"><label>ผู้รับผิดชอบ</label><div>${escapeHtml(state.lookup.users.find(u=>u.user_id===book.responsibleUserId)?.display_name||'-')}</div></div><div class="field"><label>กำหนดดำเนินการ</label><div>${thaiDate(book.dueDate)}</div></div>
+          <div class="field full"><label>สรุป/หมายเหตุ</label><div>${escapeHtml(book.summary||book.remarks||'-')}</div></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin:10px 0"><strong>เอกสารแนบ</strong><button class="btn btn-light" id="attachUploadBtn"><i class="fa-solid fa-paperclip"></i> แนบไฟล์</button></div>
+        <div id="detailAttachments">${attachments.length?attachments.map(a=>`<div class="list-item"><div class="list-symbol"><i class="fa-solid fa-file-lines"></i></div><div style="flex:1"><strong>${escapeHtml(a.fileName)}</strong><p>${escapeHtml(a.mimeType)} • ${Number(a.sizeBytes||0).toLocaleString('th-TH')} bytes</p></div><button class="mini-btn" data-download="${escapeHtml(a.attachmentId)}"><i class="fa-solid fa-download"></i></button></div>`).join(''):'<div class="muted small">ยังไม่มีไฟล์แนบ</div>'}</div>
+      </div>`;
+      await Swal.fire({title:'รายละเอียดหนังสือ',html,width:820,showConfirmButton:true,confirmButtonText:'ปิด',showDenyButton:true,denyButtonText:'บันทึกการดำเนินงาน',showCancelButton:true,cancelButtonText:'มอบหมายงาน',didOpen:()=>{
+        $('#attachUploadBtn')?.addEventListener('click',()=>uploadAttachment(type,id));
+        $$('#detailAttachments [data-download]').forEach(btn=>btn.addEventListener('click',()=>downloadAttachment(btn.dataset.download)));
+      }}).then(async result=>{
+        if(result.isDenied) await openWorkflowForm(type,id);
+        if(result.dismiss===Swal.DismissReason.cancel) await openAssignmentForm(type,id,book);
+      });
+    }
+    async function cancelBook(type,id) {
+      const confirm=await Swal.fire({title:'ยกเลิกรายการทะเบียน?',text:'ระบบจะยกเลิกรายการและเก็บประวัติไว้ ไม่ลบข้อมูลถาวร',icon:'warning',showCancelButton:true,confirmButtonText:'ยืนยันยกเลิก',cancelButtonText:'กลับ',confirmButtonColor:'#b83a45'});
+      if(!confirm.isConfirmed)return;
+      await withLoading('กำลังยกเลิกทะเบียน',()=>api(type==='INCOMING'?'books.incoming.delete':'books.outgoing.delete',{agencyId:agencyId(),bookId:id}));
+      notify('ยกเลิกรายการแล้ว'); await navigate(type==='INCOMING'?'incoming':'outgoing');
+    }
+    async function openWorkflowForm(type,id) {
+      const {value}=await Swal.fire({title:'บันทึกการดำเนินงาน',html:`<div class="field" style="text-align:left"><label>กิจกรรม</label><select id="workflowAction" class="swal2-select"><option value="NOTE">บันทึกหมายเหตุ</option><option value="FORWARD">ส่งต่อ</option><option value="STATUS_CHANGE">เปลี่ยนสถานะ</option><option value="APPROVE">อนุมัติ</option><option value="RETURN">ส่งกลับแก้ไข</option></select></div><div class="field" style="text-align:left"><label>สถานะใหม่ (กรณีเปลี่ยนสถานะ)</label><select id="workflowStatus" class="swal2-select"><option value="RECEIVED">รับเข้าแล้ว</option><option value="PENDING">รอดำเนินการ</option><option value="IN_PROGRESS">อยู่ระหว่างดำเนินการ</option><option value="COMPLETED">ดำเนินการแล้ว</option></select></div><div class="field" style="text-align:left"><label>รายละเอียด</label><textarea id="workflowNote" class="swal2-textarea"></textarea></div>`,showCancelButton:true,confirmButtonText:'บันทึก',cancelButtonText:'ยกเลิก',preConfirm:()=>({actionType:$('#workflowAction').value,toStatus:$('#workflowAction').value==='STATUS_CHANGE'?$('#workflowStatus').value:undefined,note:$('#workflowNote').value})});
+      if(!value)return;
+      await withLoading('กำลังบันทึกประวัติ',()=>api('workflow.add',{agencyId:agencyId(),bookType:type,bookId:id,...value})); notify('บันทึกการดำเนินงานแล้ว');
+    }
+    async function openAssignmentForm(type,id,book) {
+      const users=state.lookup.users.filter(u=>u.status==='ACTIVE');
+      const depts=state.lookup.departments.filter(d=>d.status==='ACTIVE');
+      const {value}=await Swal.fire({title:'มอบหมายงาน',html:`<div class="field" style="text-align:left"><label>ผู้รับผิดชอบ</label><select id="assignUser" class="swal2-select">${lookupOptions(users,'user_id','display_name')}</select></div><div class="field" style="text-align:left"><label>ฝ่าย/กลุ่มงาน</label><select id="assignDept" class="swal2-select">${lookupOptions(depts,'department_id','department_name')}</select></div><div class="field" style="text-align:left"><label>กำหนดดำเนินการ</label><input id="assignDue" class="swal2-input" type="date"></div><div class="field" style="text-align:left"><label>คำสั่ง/รายละเอียด</label><textarea id="assignInstructions" class="swal2-textarea"></textarea></div>`,showCancelButton:true,confirmButtonText:'มอบหมาย',cancelButtonText:'ยกเลิก',preConfirm:()=>({assignedToUserId:$('#assignUser').value,assignedToDepartmentId:$('#assignDept').value,dueAt:$('#assignDue').value,instructions:$('#assignInstructions').value,title:book.subject,priorityLevel:book.priorityLevel})});
+      if(!value)return;
+      await withLoading('กำลังมอบหมายงาน',()=>api('assignments.create',{agencyId:agencyId(),bookType:type,bookId:id,...value})); notify('มอบหมายงานแล้ว');
+    }
+
+    /* =====================================================================
+       18. FILE ATTACHMENTS AND DIRECT DOWNLOAD
+       ===================================================================== */
+    async function uploadAttachment(type,id) {
+      const input=document.createElement('input'); input.type='file'; input.accept='.pdf,.doc,.docx,.xls,.xlsx,.txt,.jpg,.jpeg,.png,.webp,.gif'; input.onchange=async()=>{
+        const file=input.files?.[0]; if(!file)return;
+        if(file.size>APP_CONFIG.MAX_UPLOAD_BYTES)return notify('ไฟล์มีขนาดเกิน 8 MB','warning');
+        try {
+          const dataUrl=await readFileAsDataUrl(file);
+          await withLoading('กำลังอัปโหลดเอกสาร',()=>api('attachments.upload',{agencyId:agencyId(),bookType:type,bookId:id,fileName:file.name,mimeType:file.type||'application/octet-stream',fileBase64:dataUrl,category:'GENERAL'}));
+          notify('อัปโหลดไฟล์สำเร็จ');
+          if(state.currentBook) await viewBook(type,id);
+        } catch(error) { showError(error); }
+      };
+      input.click();
+    }
+    async function downloadAttachment(id) {
+      await withLoading('กำลังเตรียมดาวน์โหลด',async()=>{
+        const file=await api('attachments.download',{agencyId:agencyId(),attachmentId:id});
+        downloadApiFile(file);
+      });
+      notify('เริ่มดาวน์โหลดไฟล์แล้ว');
+    }
+    async function renderFiles() {
+      const attachments=asArray(await api('attachments.list',{agencyId:agencyId(),page:1,pageSize:200}));
+      $('#contentArea').innerHTML=`<div class="page-heading"><div><div class="eyebrow">DOCUMENT CENTER</div><h1>แฟ้มเอกสารกลาง</h1><p>ค้นหาและดาวน์โหลดเอกสารที่จัดเก็บในพื้นที่ส่วนตัวของหน่วยงาน</p></div></div>
+        <div class="card card-pad"><div class="toolbar"><input class="control search-control" id="fileSearch" placeholder="ค้นหาชื่อไฟล์"><span class="muted small">${attachments.length} ไฟล์</span></div><div class="table-wrap"><table class="data-table"><thead><tr><th>ชื่อไฟล์</th><th>ประเภท</th><th>ขนาด</th><th>วันที่อัปโหลด</th><th>หมวดหมู่</th><th>ดาวน์โหลด</th></tr></thead><tbody id="fileRows">${attachments.length?attachments.map(a=>`<tr><td><span class="table-primary">${escapeHtml(a.fileName)}</span></td><td>${escapeHtml(a.mimeType)}</td><td>${(Number(a.sizeBytes||0)/1024).toFixed(1)} KB</td><td>${thaiDate(a.uploadedAt)}</td><td>${escapeHtml(a.category||'-')}</td><td><button class="mini-btn" data-id="${escapeHtml(a.attachmentId)}"><i class="fa-solid fa-download"></i></button></td></tr>`).join(''):'<tr><td colspan="6"><div class="empty-state"><i class="fa-regular fa-folder-open"></i><strong>ยังไม่มีเอกสาร</strong></div></td></tr>'}</tbody></table></div></div>`;
+      $('#fileSearch').addEventListener('input',event=>$$('#fileRows tr').forEach(row=>row.hidden=!row.textContent.toLowerCase().includes(event.target.value.toLowerCase())));
+      $('#fileRows').addEventListener('click',event=>{const btn=event.target.closest('[data-id]');if(btn)downloadAttachment(btn.dataset.id);});
+    }
+
+    /* =====================================================================
+       19. ASSIGNMENTS AND WORK TRACKING
+       ===================================================================== */
+    async function renderAssignments() {
+      const rows=asArray(await api('assignments.list',{agencyId:agencyId(),mineOnly:true,page:1,pageSize:200}));
+      $('#contentArea').innerHTML=`<div class="page-heading"><div><div class="eyebrow">WORKFLOW</div><h1>งานที่ได้รับมอบหมาย</h1><p>ตรวจสอบความคืบหน้าและบันทึกผลการดำเนินงาน</p></div></div><div class="card card-pad"><div class="table-wrap"><table class="data-table"><thead><tr><th>หัวข้องาน</th><th>ประเภทหนังสือ</th><th>ผู้มอบหมาย</th><th>วันที่มอบหมาย</th><th>กำหนดส่ง</th><th>สถานะ</th><th>ปรับปรุง</th></tr></thead><tbody>${rows.length?rows.map(a=>`<tr><td><span class="table-primary">${escapeHtml(a.assignment_title||a.title||'-')}</span><span class="table-sub">${escapeHtml(a.instructions||'')}</span></td><td>${a.book_type==='OUTGOING'?'หนังสือส่ง':'หนังสือรับ'}</td><td>${escapeHtml(state.lookup.users.find(u=>u.user_id===a.assigned_from_user_id)?.display_name||'-')}</td><td>${thaiDate(a.assigned_at)}</td><td>${thaiDate(a.due_at)}</td><td><span class="status ${statusClass(a.status)}">${escapeHtml(statusText(a.status))}</span></td><td><button class="mini-btn" data-id="${escapeHtml(a.assignment_id)}" data-status="IN_PROGRESS" title="เริ่มดำเนินการ"><i class="fa-solid fa-play"></i></button> <button class="mini-btn" data-id="${escapeHtml(a.assignment_id)}" data-status="COMPLETED" title="ดำเนินการเสร็จ"><i class="fa-solid fa-check"></i></button></td></tr>`).join(''):'<tr><td colspan="7"><div class="empty-state"><i class="fa-solid fa-list-check"></i><strong>ไม่มีงานที่ได้รับมอบหมาย</strong></div></td></tr>'}</tbody></table></div></div>`;
+      $('#contentArea tbody').addEventListener('click',async event=>{const btn=event.target.closest('[data-id]');if(!btn)return;const {value}=await Swal.fire({title:'ปรับปรุงสถานะงาน',input:'textarea',inputLabel:'บันทึกผล/หมายเหตุ',showCancelButton:true,confirmButtonText:'บันทึก',cancelButtonText:'ยกเลิก'});if(value===undefined)return;await withLoading('กำลังปรับปรุงงาน',()=>api('assignments.update',{assignmentId:btn.dataset.id,status:btn.dataset.status,completionNote:value}));notify('อัปเดตสถานะงานแล้ว');renderAssignments();});
+    }
+
+    /* =====================================================================
+       20. GLOBAL SEARCH
+       ===================================================================== */
+    async function renderSearch() {
+      $('#contentArea').innerHTML=`<div class="page-heading"><div><div class="eyebrow">GLOBAL SEARCH</div><h1>ค้นหาหนังสือ</h1><p>ค้นหาจากเลขทะเบียน เลขที่หนังสือ ชื่อเรื่อง และหน่วยงาน</p></div></div><div class="card card-pad"><form class="toolbar" id="globalSearchForm"><input class="control search-control" id="globalSearchInput" placeholder="พิมพ์คำค้นหาอย่างน้อย 2 ตัวอักษร"><button class="btn btn-primary"><i class="fa-solid fa-magnifying-glass"></i> ค้นหา</button></form><div id="globalSearchResults"><div class="empty-state"><i class="fa-solid fa-magnifying-glass"></i><strong>เริ่มค้นหาหนังสือ</strong></div></div></div>`;
+      $('#globalSearchForm').addEventListener('submit',async event=>{
+        event.preventDefault();const query=$('#globalSearchInput').value.trim();if(query.length<2)return notify('คำค้นหาต้องมีอย่างน้อย 2 ตัวอักษร','warning');
+        const result=await withLoading('กำลังค้นหา',()=>api('search.global',{query,limit:100}));
+        const rows=result.results||[];
+        $('#globalSearchResults').innerHTML=rows.length?`<div class="table-wrap"><table class="data-table"><thead><tr><th>ประเภท</th><th>เลขทะเบียน</th><th>เลขที่หนังสือ</th><th>เรื่อง</th><th>หน่วยงาน</th><th>วันที่</th><th></th></tr></thead><tbody>${rows.map(item=>`<tr><td>${item.bookType==='INCOMING'?'หนังสือรับ':'หนังสือส่ง'}</td><td>${escapeHtml(item.book.registrationNo||'-')}</td><td>${escapeHtml(item.book.documentNumber||'-')}</td><td>${escapeHtml(item.book.subject||'-')}</td><td>${escapeHtml(item.book.senderAgency||item.book.recipientAgency||'-')}</td><td>${thaiDate(item.book.receivedDate||item.book.sentDate)}</td><td><button class="mini-btn" data-type="${item.bookType}" data-id="${escapeHtml(item.book.bookId)}"><i class="fa-regular fa-eye"></i></button></td></tr>`).join('')}</tbody></table></div><p class="muted small">พบ ${result.total} รายการ</p>`:'<div class="empty-state"><i class="fa-regular fa-face-meh"></i><strong>ไม่พบข้อมูลที่ตรงกับคำค้นหา</strong></div>';
+        $('#globalSearchResults').querySelectorAll('[data-id]').forEach(button=>button.addEventListener('click',()=>viewBook(button.dataset.type,button.dataset.id)));
+      });
+    }
+
+    /* =====================================================================
+       21. REPORTS AND CANVAS-BASED LANDSCAPE PDF
+       ===================================================================== */
+    async function renderReports() {
+      const report=await api('reports.summary',{agencyId:agencyId()});
+      $('#contentArea').innerHTML=`<div class="page-heading"><div><div class="eyebrow">REPORTS & ANALYTICS</div><h1>รายงานและสถิติ</h1><p>สรุปข้อมูลทะเบียนตามปีงบประมาณของหน่วยงาน</p></div></div>
+        <div class="stat-grid"><div class="card stat-card"><div class="stat-icon"><i class="fa-solid fa-inbox"></i></div><div><strong>${report.incomingTotal||0}</strong><span>หนังสือรับ</span></div></div><div class="card stat-card"><div class="stat-icon"><i class="fa-solid fa-paper-plane"></i></div><div><strong>${report.outgoingTotal||0}</strong><span>หนังสือส่ง</span></div></div><div class="card stat-card"><div class="stat-icon"><i class="fa-solid fa-check-circle"></i></div><div><strong>${report.completedAssignments||0}</strong><span>งานเสร็จสิ้น</span></div></div><div class="card stat-card"><div class="stat-icon"><i class="fa-solid fa-clock"></i></div><div><strong>${report.overdueAssignments||0}</strong><span>งานเกินกำหนด</span></div></div></div>
+        <div class="card card-pad"><h3 style="margin:0 0 14px;color:var(--navy-900)">พิมพ์ทะเบียนหนังสือ</h3><div class="toolbar"><select class="control" id="pdfType"><option value="INCOMING">ทะเบียนหนังสือรับ</option><option value="OUTGOING">ทะเบียนหนังสือส่ง</option></select><input class="control" id="pdfYear" type="number" value="${escapeHtml(report.fiscalYear||'') }" placeholder="ปีงบประมาณ"><button class="btn btn-primary" id="generatePdfBtn"><i class="fa-solid fa-file-pdf"></i> สร้าง PDF และดาวน์โหลด</button></div><div class="modal-note">เอกสาร A4 แนวนอน ใช้ข้อมูลจริงจากทะเบียนและแสดงโลโก้หน่วยงาน หากเปิดใช้บริการเข้ารหัส PDF จะดาวน์โหลดไฟล์ที่ตั้งรหัสผ่าน AES-256</div></div>`;
+      $('#generatePdfBtn').addEventListener('click',()=>exportRegistryPdf($('#pdfType').value,{year:$('#pdfYear').value}));
+    }
+    async function exportRegistryPdf(type, filters={}) {
+      try {
+        const encrypted = await withLoading('กำลังเตรียมข้อมูลและเข้ารหัสรายงาน',async()=>{
+          const report=await api('pdf.registryData',{agencyId:agencyId(),bookType:type,year:filters.year||'',dateFrom:filters.dateFrom||'',dateTo:filters.dateTo||'',limit:181});
+          if((report.rows||[]).length>180) throw new Error('มีรายการทะเบียนมากกว่า 180 รายการ กรุณากรองปีงบประมาณหรือช่วงวันที่ให้แคบลงก่อนพิมพ์ เพื่อให้ได้รายงานครบถ้วน');
+          const pdfBlob=await renderRegistryCanvasPdf(report);
+          const base64=await blobToBase64(pdfBlob);
+          return await api('pdf.encryptAndStore',{agencyId:agencyId(),pdfBase64:base64,fileName:`${report.reportTitle}_${report.fiscalYear}.pdf`,purpose:'REGISTRY_REPORT'});
+        });
+        downloadApiFile(encrypted);
+        await showPdfPassword(encrypted.passwordForClipboard,encrypted.fileName);
+      } catch (error) { /* withLoading already reports API errors */ }
+    }
+    function blobToBase64(blob) {
+      return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result).split(',')[1]);reader.onerror=()=>reject(new Error('แปลง PDF ไม่สำเร็จ'));reader.readAsDataURL(blob);});
+    }
+    async function renderRegistryCanvasPdf(report) {
+      await document.fonts.ready;
+      const {jsPDF}=window.jspdf;
+      const pdf=new jsPDF({orientation:'landscape',unit:'mm',format:'a4',compress:true});
+      const pageWidth=3508,pageHeight=2480,margin=115,usable=pageWidth-margin*2;
+      const rows=report.rows||[],perPage=17,pageCount=Math.max(1,Math.ceil(rows.length/perPage));
+      const incoming=report.bookType==='INCOMING';
+      const columns=incoming?[
+        {label:'เลขทะเบียนรับ',key:'registrationNo',w:.11},{label:'วันที่รับ',key:'receivedDate',w:.09},{label:'เลขที่หนังสือ',key:'documentNumber',w:.12},{label:'ลงวันที่',key:'documentDate',w:.09},{label:'จาก',key:'senderAgency',w:.13},{label:'เรื่อง',key:'subject',w:.22},{label:'ความเร็ว',key:'priorityLevel',w:.08},{label:'ผู้รับผิดชอบ',key:'responsibleUserId',w:.10},{label:'สถานะ',key:'status',w:.06}
+      ]:[
+        {label:'เลขทะเบียนส่ง',key:'registrationNo',w:.11},{label:'วันที่ส่ง',key:'sentDate',w:.09},{label:'เลขที่หนังสือ',key:'documentNumber',w:.12},{label:'ลงวันที่',key:'documentDate',w:.09},{label:'ถึง',key:'recipientAgency',w:.13},{label:'เรื่อง',key:'subject',w:.22},{label:'ความเร็ว',key:'priorityLevel',w:.08},{label:'ผู้ลงนาม',key:'signatoryName',w:.10},{label:'สถานะ',key:'status',w:.06}
+      ];
+      for(let page=0;page<pageCount;page++) {
+        const canvas=document.createElement('canvas');canvas.width=2480;canvas.height=1754;
+        const ctx=canvas.getContext('2d');ctx.scale(canvas.width/pageWidth,canvas.height/pageHeight);ctx.fillStyle='#ffffff';ctx.fillRect(0,0,pageWidth,pageHeight);
+        ctx.fillStyle='#111827';ctx.textAlign='center';ctx.font='bold 54px "TH Sarabun PSK", "TH Sarabun New", Sarabun, sans-serif';
+        let logoLoaded=false;
+        if(report.agency?.logoUrl) {
+          try { const img=new Image();img.crossOrigin='anonymous';img.src=report.agency.logoUrl;await img.decode();ctx.drawImage(img,pageWidth/2-65,55,130,130);logoLoaded=true; }
+          catch(error) { logoLoaded=false; }
+        }
+        const headerY=logoLoaded?245:150;
+        ctx.font='bold 56px "TH Sarabun PSK", "TH Sarabun New", Sarabun, sans-serif';
+        ctx.fillText(report.agency?.agencyName||'ชื่อหน่วยงาน',pageWidth/2,headerY);
+        ctx.font='bold 48px "TH Sarabun PSK", "TH Sarabun New", Sarabun, sans-serif';
+        ctx.fillText(`${report.reportTitle} ประจำปีงบประมาณ พ.ศ. ${report.fiscalYear}`,pageWidth/2,headerY+72);
+        ctx.textAlign='left';ctx.font='30px "TH Sarabun PSK", "TH Sarabun New", Sarabun, sans-serif';
+        ctx.fillText(`พิมพ์เมื่อ ${thaiDate(report.generatedAt)}    จำนวน ${report.total} รายการ`,margin,headerY+132);
+        const tableTop=headerY+185,headH=72,rowH=92;
+        let x=margin;
+        ctx.fillStyle='#eaf0f5';ctx.fillRect(margin,tableTop,usable,headH);
+        columns.forEach(column=>{
+          column.x=x;column.width=usable*column.w;
+          ctx.strokeStyle='#536b7c';ctx.lineWidth=2;ctx.strokeRect(x,tableTop,column.width,headH);
+          ctx.fillStyle='#162f44';ctx.textAlign='center';ctx.font='bold 31px "TH Sarabun PSK", "TH Sarabun New", Sarabun, sans-serif';
+          wrapCanvasText(ctx,column.label,x+8,tableTop+43,column.width-16,34);
+          x+=column.width;
+        });
+        const pageRows=rows.slice(page*perPage,(page+1)*perPage);
+        pageRows.forEach((record,index)=>{
+          const y=tableTop+headH+index*rowH;let cellX=margin;
+          columns.forEach(column=>{
+            ctx.strokeStyle='#8b9aa5';ctx.lineWidth=1.5;ctx.strokeRect(cellX,y,column.width,rowH);
+            let value=record[column.key]||'';
+            if(column.key==='responsibleUserId')value=state.lookup.users.find(user=>user.user_id===value)?.display_name||'';
+            if(column.key==='receivedDate'||column.key==='sentDate'||column.key==='documentDate')value=value?thaiDate(value):'';
+            if(column.key==='status')value=statusText(value);
+            ctx.fillStyle='#1f2937';ctx.textAlign=column.key==='subject'?'left':'center';ctx.font='27px "TH Sarabun PSK", "TH Sarabun New", Sarabun, sans-serif';
+            wrapCanvasText(ctx,String(value),cellX+(column.key==='subject'?12:6),y+34,column.width-(column.key==='subject'?22:12),30);
+            cellX+=column.width;
+          });
+        });
+        const footerY=pageHeight-95;ctx.fillStyle='#475569';ctx.font='25px "TH Sarabun PSK", "TH Sarabun New", Sarabun, sans-serif';ctx.textAlign='left';ctx.fillText('เอกสารจากระบบทะเบียนรับ–ส่งหนังสืออิเล็กทรอนิกส์',margin,footerY);ctx.textAlign='right';ctx.fillText(`หน้า ${page+1} / ${pageCount}`,pageWidth-margin,footerY);
+        const image=canvas.toDataURL('image/jpeg',.88);
+        if(page>0)pdf.addPage('a4','landscape');
+        pdf.addImage(image,'JPEG',0,0,297,210,undefined,'FAST');
+      }
+      return pdf.output('blob');
+    }
+    function wrapCanvasText(ctx,text,x,y,maxWidth,lineHeight) {
+      const words=String(text||'').split(/\s+/);let line='',lines=[];
+      words.forEach(word=>{const test=line?line+' '+word:word;if(ctx.measureText(test).width>maxWidth&&line){lines.push(line);line=word;}else line=test;});
+      if(line)lines.push(line);
+      const shown=lines.slice(0,2);shown.forEach((value,index)=>ctx.fillText(value,x,y+index*lineHeight));
+    }
+    async function showPdfPassword(password,fileName) {
+      if(!password)throw new Error('ไฟล์ถูกสร้างแล้ว แต่ Gateway ไม่ได้ส่งข้อมูลรหัสผ่านสำหรับคัดลอกกลับมา');
+      await Swal.fire({
+        icon:'success',title:'ไฟล์ PDF พร้อมดาวน์โหลด',
+        html:`<div class="modal-note">ไฟล์ <strong>${escapeHtml(fileName)}</strong> ถูกเข้ารหัส AES-256 แล้ว กรุณาคัดลอกรหัสผ่านก่อนปิดหน้าต่าง</div><div style="text-align:left;margin-top:14px"><label style="display:block;font-weight:700;margin-bottom:6px">รหัสผ่านไฟล์</label><div class="credential-mask">********************</div><button type="button" class="btn btn-primary" style="width:100%;margin-top:10px" id="copyPdfPassword"><i class="fa-regular fa-copy"></i> คัดลอกรหัสผ่าน</button></div>`,
+        confirmButtonText:'รับทราบ',allowOutsideClick:false,allowEscapeKey:false,
+        didOpen:()=>$('#copyPdfPassword').addEventListener('click',async()=>{
+          try { await navigator.clipboard.writeText(password);notify('คัดลอกรหัสผ่านแล้ว'); }
+          catch(error) { Swal.showValidationMessage('เบราว์เซอร์ไม่อนุญาตให้คัดลอก กรุณาใช้ HTTPS และอนุญาต Clipboard'); }
+        })
+      });
+    }
+
+    /* =====================================================================
+       22. NOTIFICATIONS, PROFILE AND AGENCY SETTINGS
+       ===================================================================== */
+    async function refreshNotificationCount() {
+      try {
+        const rows=asArray(await api('notifications.list',{agencyId:agencyId(),unreadOnly:true,page:1,pageSize:100}));
+        state.unreadCount=rows.length;$('#notificationDot').classList.toggle('hidden',!rows.length);
+      } catch(error) { /* notification badge is non-blocking */ }
+    }
+    async function renderNotifications() {
+      const rows=asArray(await api('notifications.list',{agencyId:agencyId(),page:1,pageSize:100}));
+      $('#contentArea').innerHTML=`<div class="page-heading"><div><div class="eyebrow">NOTIFICATIONS</div><h1>การแจ้งเตือน</h1><p>หนังสือใหม่ งานมอบหมาย และการอัปเดตกระบวนงาน</p></div></div><div class="card card-pad"><div class="list-stack">${rows.length?rows.map(n=>`<div class="list-item"><div class="list-symbol"><i class="fa-regular fa-bell"></i></div><div style="flex:1"><strong>${escapeHtml(n.title||'แจ้งเตือน')}</strong><p>${escapeHtml(n.message||'')} • ${thaiDate(n.created_at)}</p></div>${String(n.is_read)!=='true'&&n.is_read!==true?`<button class="btn btn-light" data-read="${escapeHtml(n.notification_id)}">อ่านแล้ว</button>`:'<span class="status completed">อ่านแล้ว</span>'}</div>`).join(''):'<div class="empty-state"><i class="fa-regular fa-bell-slash"></i><strong>ไม่มีการแจ้งเตือน</strong></div>'}</div></div>`;
+      $('#contentArea').querySelectorAll('[data-read]').forEach(button=>button.addEventListener('click',async()=>{await api('notifications.markRead',{notificationId:button.dataset.read,agencyId:agencyId()});renderNotifications();refreshNotificationCount();}));
+    }
+    async function renderProfile() {
+      $('#contentArea').innerHTML=`<div class="page-heading"><div><div class="eyebrow">MY ACCOUNT</div><h1>โปรไฟล์และรหัสผ่าน</h1><p>จัดการข้อมูลบัญชีและความปลอดภัยในการเข้าสู่ระบบ</p></div></div><div class="panel-grid"><div class="card card-pad"><h3 style="margin-top:0">ข้อมูลส่วนตัว</h3><div class="field"><label>ชื่อที่แสดง</label><input class="control" id="profileDisplayName" value="${escapeHtml(state.user.displayName||'')}"></div><div class="field"><label>อีเมล</label><input class="control" id="profileEmail" type="email" value="${escapeHtml(state.user.email||'')}"></div><div class="field"><label>โทรศัพท์</label><input class="control" id="profilePhone" value="${escapeHtml(state.user.phone||'')}"></div><div class="field"><label>ตำแหน่ง</label><input class="control" id="profilePosition" value="${escapeHtml(state.user.position||'')}"></div><button class="btn btn-primary" id="saveProfileBtn"><i class="fa-solid fa-floppy-disk"></i> บันทึกข้อมูล</button></div><div class="card card-pad"><h3 style="margin-top:0">เปลี่ยนรหัสผ่าน</h3><div class="field"><label>รหัสผ่านปัจจุบัน</label><input class="control" type="password" id="currentPassword"></div><div class="field"><label>รหัสผ่านใหม่</label><input class="control" type="password" id="newPassword" autocomplete="new-password"></div><div class="field"><label>ยืนยันรหัสผ่านใหม่</label><input class="control" type="password" id="confirmPassword" autocomplete="new-password"></div><div class="modal-note">รหัสผ่านใหม่ต้องมีความยาวอย่างน้อย 12 ตัวอักษร</div><button class="btn btn-teal" id="changePasswordBtn" style="margin-top:12px"><i class="fa-solid fa-key"></i> เปลี่ยนรหัสผ่าน</button></div></div>`;
+      $('#saveProfileBtn').addEventListener('click',async()=>{
+        const user=await withLoading('กำลังบันทึกข้อมูล',()=>api('auth.updateProfile',{displayName:$('#profileDisplayName').value.trim(),email:$('#profileEmail').value.trim(),phone:$('#profilePhone').value.trim(),position:$('#profilePosition').value.trim()}));
+        state.user=user;$('#sideUserName').textContent=user.displayName;notify('บันทึกโปรไฟล์แล้ว');
+      });
+      $('#changePasswordBtn').addEventListener('click',async()=>{
+        const currentPassword=$('#currentPassword').value,newPassword=$('#newPassword').value,confirm=$('#confirmPassword').value;
+        if(newPassword.length<12||newPassword!==confirm)return notify('รหัสผ่านใหม่ต้องอย่างน้อย 12 ตัวและตรงกัน','warning');
+        await withLoading('กำลังเปลี่ยนรหัสผ่าน',()=>api('auth.changePassword',{currentPassword,newPassword}));
+        await Swal.fire({icon:'success',title:'เปลี่ยนรหัสผ่านแล้ว',text:'กรุณาเข้าสู่ระบบใหม่'});await api('auth.logout',{}).catch(()=>{});showLoginScreen();
+      });
+    }
+    async function renderSettings() {
+      const data=await api('settings.get',{agencyId:agencyId()});const settings=data.settings||{};const agency=data.agency||state.agency;
+      $('#contentArea').innerHTML=`<div class="page-heading"><div><div class="eyebrow">AGENCY SETTINGS</div><h1>ตั้งค่าหน่วยงาน</h1><p>ปรับข้อมูลหน่วยงาน รูปแบบเลขทะเบียน และการแสดงผลรายงาน</p></div></div><div class="panel-grid"><div class="card card-pad"><h3 style="margin-top:0">ข้อมูลหน่วยงาน</h3><div class="field"><label>ชื่อหน่วยงาน</label><input class="control" id="setAgencyName" value="${escapeHtml(agency.agencyName||'')}"></div><div class="field"><label>ชื่อย่อ</label><input class="control" id="setShortName" value="${escapeHtml(agency.shortName||'')}"></div><div class="field"><label>ที่อยู่</label><textarea class="control" id="setAddress">${escapeHtml(agency.address||'')}</textarea></div><div class="field"><label>โทรศัพท์</label><input class="control" id="setPhone" value="${escapeHtml(agency.phone||'')}"></div><div class="field"><label>อีเมล</label><input class="control" id="setEmail" value="${escapeHtml(agency.email||'')}"></div><button class="btn btn-primary" id="saveAgencyInfo"><i class="fa-solid fa-floppy-disk"></i> บันทึกข้อมูลหน่วยงาน</button></div><div class="card card-pad"><h3 style="margin-top:0">ตั้งค่าทะเบียนและเอกสาร</h3><div class="field"><label>คำนำหน้าเลขทะเบียนรับ</label><input class="control" id="incomingPrefix" value="${escapeHtml(agency.incomingPrefix||'รับ')}"></div><div class="field"><label>คำนำหน้าเลขทะเบียนส่ง</label><input class="control" id="outgoingPrefix" value="${escapeHtml(agency.outgoingPrefix||'ส่ง')}"></div><div class="field"><label>เดือนเริ่มต้นปีงบประมาณ</label><select class="control" id="fiscalMonth">${Array.from({length:12},(_,i)=>i+1).map(m=>`<option value="${m}" ${Number(agency.fiscalYearStartMonth||10)===m?'selected':''}>${m}</option>`).join('')}</select></div><div class="field"><label>ฟอนต์รายงาน</label><input class="control" value="TH Sarabun PSK" disabled></div><button class="btn btn-teal" id="saveRegistrySettings"><i class="fa-solid fa-floppy-disk"></i> บันทึกการตั้งค่า</button></div></div>`;
+      $('#saveAgencyInfo').addEventListener('click',async()=>{
+        const updated=await api('agencies.update',{agencyId:agencyId(),agencyName:$('#setAgencyName').value,shortName:$('#setShortName').value,address:$('#setAddress').value,phone:$('#setPhone').value,email:$('#setEmail').value});state.agency=updated;$('#sideAgencyName').textContent=updated.agencyName;notify('บันทึกข้อมูลหน่วยงานแล้ว');
+      });
+      $('#saveRegistrySettings').addEventListener('click',async()=>{
+        const next={...settings,incomingPrefix:$('#incomingPrefix').value,outgoingPrefix:$('#outgoingPrefix').value,fiscalYearStartMonth:Number($('#fiscalMonth').value),pdfFont:'TH Sarabun PSK',pdfOrientation:'landscape'};
+        await api('settings.update',{agencyId:agencyId(),settings:next});notify('บันทึกการตั้งค่าแล้ว');
+      });
+    }
+
+    /* =====================================================================
+       23. PASSWORD RESET FLOW
+       ===================================================================== */
+    async function requestPasswordReset() {
+      const {value}=await Swal.fire({title:'ขอตั้งรหัสผ่านใหม่',html:'<div class="field" style="text-align:left"><label>รหัสหน่วยงาน</label><input id="resetAgencyCode" class="swal2-input"></div><div class="field" style="text-align:left"><label>ชื่อผู้ใช้</label><input id="resetUsername" class="swal2-input"></div>',showCancelButton:true,confirmButtonText:'ส่งคำขอ',cancelButtonText:'ยกเลิก',preConfirm:()=>({agencyCode:$('#resetAgencyCode').value.trim(),username:$('#resetUsername').value.trim()})});
+      if(!value)return;
+      await withLoading('กำลังส่งคำขอ',()=>api('auth.requestPasswordReset',value));
+      Swal.fire({icon:'success',title:'ส่งคำขอแล้ว',text:'หากพบข้อมูลบัญชี ระบบจะส่งลิงก์ตั้งรหัสผ่านไปยังอีเมลที่ลงทะเบียน'});
+    }
+    async function handleResetToken() {
+      const params=new URLSearchParams(location.hash.replace(/^#/ ,''));const resetToken=params.get('resetToken');
+      if(!resetToken)return;
+      const agency=params.get('agency')||'';
+      const {value}=await Swal.fire({title:'ตั้งรหัสผ่านใหม่',html:'<div class="field" style="text-align:left"><label>รหัสผ่านใหม่</label><input id="resetNewPassword" type="password" class="swal2-input"></div><div class="field" style="text-align:left"><label>ยืนยันรหัสผ่านใหม่</label><input id="resetConfirmPassword" type="password" class="swal2-input"></div>',allowOutsideClick:false,showCancelButton:true,confirmButtonText:'บันทึกรหัสผ่าน',cancelButtonText:'ยกเลิก',preConfirm:()=>{const newPassword=$('#resetNewPassword').value,confirm=$('#resetConfirmPassword').value;if(newPassword.length<12||newPassword!==confirm){Swal.showValidationMessage('รหัสผ่านต้องมีอย่างน้อย 12 ตัวและตรงกัน');return false;}return {resetToken,newPassword,agencyCode:agency};}});
+      history.replaceState(null,'',location.pathname+location.search);
+      if(!value)return;
+      await withLoading('กำลังตั้งรหัสผ่าน',()=>api('auth.resetPassword',{resetToken:value.resetToken,newPassword:value.newPassword}));
+      Swal.fire({icon:'success',title:'ตั้งรหัสผ่านสำเร็จ',text:'สามารถเข้าสู่ระบบด้วยรหัสผ่านใหม่ได้แล้ว'});
+    }
+
+    /* =====================================================================
+       24. EVENT WIRING AND APPLICATION STARTUP
+       ===================================================================== */
+    $('#agencyForm').addEventListener('submit',handleAgencyLookup);
+    $('#loginForm').addEventListener('submit',handleLogin);
+    $('#changeAgencyBtn').addEventListener('click',()=>{state.agency=null;setLoginStep('agency');$('#agencyCodeInput').focus();});
+    $('#togglePassword').addEventListener('click',()=>{
+      const input=$('#passwordInput'),icon=$('#togglePassword i');
+      input.type=input.type==='password'?'text':'password';icon.className=input.type==='password'?'fa-regular fa-eye':'fa-regular fa-eye-slash';
+    });
+    $('#forgotPasswordBtn').addEventListener('click',requestPasswordReset);
+    const remembered=getRememberedLogin();
+    if(remembered.agencyCode){$('#agencyCodeInput').value=remembered.agencyCode;$('#usernameInput').value=remembered.username||'';$('#rememberLogin').checked=true;}
+    window.addEventListener('DOMContentLoaded',async()=>{
+      try { await handleResetToken(); } catch(error) { showError(error); }
+      await restoreSession();
+    });
+
+    // Expose only view actions used by inline UI buttons; no credential material is exposed.
+    window.navigate=navigate;
+    window.openBookForm=openBookForm;
+    window.exportRegistryPdf=exportRegistryPdf;
+  </script>
+</body>
+</html>
